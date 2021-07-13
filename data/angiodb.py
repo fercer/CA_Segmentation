@@ -20,7 +20,7 @@ class AngioDB(Dataset):
             self._target_fn = list(map(lambda i: os.path.join(root, '{}_gt.png'.format(i + 1)), range(75, 100)))
 
         elif 'test' in mode:
-            self._data_fn = list(map(lambda i: os.path.join(root, '{}.png',format(i+1)), range(100, 130)))
+            self._data_fn = list(map(lambda i: os.path.join(root, '{}.png'.format(i+1)), range(100, 130)))
             self._target_fn = list(map(lambda i: os.path.join(root, '{}_gt.png'.format(i+1)), range(100, 130)))
 
         if size > 0:

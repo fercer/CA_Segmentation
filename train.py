@@ -104,10 +104,10 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default='../data', help='location of the data corpus')
     parser.add_argument('--dataset_size', type=int, default=100, help='training dataset size')
     parser.add_argument('--augment_data', action='store_true', default=False, help='apply transformation to augment data')
-    parser.add_argument('--pos_weight', type=float, default=1.0, help='positive weight')
+    parser.add_argument('--pos_weight', type=float, default=1, help='positive weight')
 
     parser.add_argument('--batch_size', type=int, default=96, help='batch size')
-    parser.add_argument('--learning_rate', type=float, default=0.025, help='init learning rate')
+    parser.add_argument('--learning_rate', type=float, default=1e-3, help='init learning rate')
     parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
     parser.add_argument('--beta0', type=float, default=0.9, help='ADAM beta 0 parameter')
     parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
@@ -122,6 +122,7 @@ if __name__ == '__main__':
     if args.seed < 0:
         args.seed = np.random.randint(0, 10000)
 
+    args.save = '{}_lr{:.0e}_bs{}_{}ds{}_pw{:.0e}'.format(args.save, args.learning_rate, args.batch_size, 'da_' if args.augment_data else '', args.dataset_size, args.pos_weight)
     if not os.path.exists(args.save):
         os.mkdir(args.save)
 
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=log_format, datefmt='%m/%d %I:%M:%S %p')
 
     logger = logging.getLogger('training')
-    fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
+    fh = logging.FileHandler(os.path.join(args.save, 'experiment.log'))
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter(log_format))
     logger.addHandler(fh)
