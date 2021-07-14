@@ -15,16 +15,24 @@ from data.angiodb import AngioDB, AngioTransform, ang_patches_collate
 from functools import partial
 
 
-def valid_step(model, loader, criterion):
+def valid_step(model, loader, criterion, store_path=None):
     logger = logging.getLogger('testing')
 
     model.eval()
     with torch.no_grad():
+        if store_path is not None:
+            all_predictions = []
+
         for i, (data, target) in enumerate(loader):
             out = model(data)
             loss = criterion(out.squeeze(dim=1), target.cuda())
 
-            prob = out.sigmoid().detach().cpu().numpy().flatten()
+            prob = out.sigmoid().detach().cpu().numpy()
+            if store_path is not None:
+                all_predictions.append(prob)
+
+            prob = prob.flatten()
+
             target = target.long().numpy().flatten()
             roc = metrics.roc_auc_score(target, prob, labels=[0, 1])
 
@@ -35,6 +43,11 @@ def valid_step(model, loader, criterion):
             f1 = metrics.f1_score(target, pred, labels=[0, 1])
 
             logger.log(level=logging.INFO, msg='[Test step] [{}, {}] Loss: {}, Acc: {}, Prec: {}, Recall: {}, F1: {}, AUC_ROC: {}'.format(i, data.size(0), loss.item(), acc, prec, rec, f1, roc))
+
+        if store_path:
+            all_predictions = np.concatenate(all_predictions, axis=0)
+            with open(store_path, 'wb') as fp:
+                np.save(fp, all_predictions)
 
 
 def main(args):
@@ -57,7 +70,11 @@ def main(args):
     checkpoint = torch.load(args.model_path)
     model.load_state_dict(checkpoint)
 
-    valid_step(model, tst_loader, criterion)
+    store_path = None
+    if args.store_pred:
+        store_path = os.path.join(args.save, 'prediction.npy')
+
+    valid_step(model, tst_loader, criterion, store_path)
 
 
 if __name__ == '__main__':
@@ -71,6 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, help='path to the checkpoint model')
     parser.add_argument('--save', type=str, default='EXP', help='experiment name')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
+    parser.add_argument('--store_pred', action='store_true', default=False, help='store predictions in a binary numpy file')
     args = parser.parse_args()
 
     if args.seed < 0:
